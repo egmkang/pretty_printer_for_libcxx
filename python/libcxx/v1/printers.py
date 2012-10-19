@@ -58,6 +58,42 @@ class CxxVectorPrinter:
     def display_hint(self):
         return 'std::vector'
 
+class CxxListPrinter:
+    "std::__1::list"
+
+    class _iterator:
+        def __init__(self, begin, size):
+            self.begin = begin
+            self.count = 0
+            self.size = size
+
+        def __iter__(self):
+            return self
+        
+        def next(self):
+            count = self.count
+            self.count = self.count + 1
+            if count == self.size:
+                raise StopIteration
+            value = self.begin.dereference()['__value_']
+            self.begin = self.begin['__next_']
+            return ('[%d]' % count, value)
+
+    def __init__(self, typename, val):
+        self.val = val
+        self.typename = typename
+
+    def children(self):
+        return self._iterator(self.val['__end_']['__next_'],
+                              self.val['__size_alloc_']['__first_'])
+
+    def to_string(self):
+        size = self.val['__size_alloc_']['__first_']
+        return ('%s of length %d' % (self.typename, size))
+
+    def display_hint(self):
+        return 'std::list'
+
 _type_parse_map = []
 
 def reg_function(regex, parse):
@@ -82,6 +118,7 @@ def register_libcxx_printers(obj):
         reg_function('^std::__1::basic_string<char,.*>$', CxxStringPrinter)
         reg_function('^std::__1::string.*$', CxxStringPrinter)
         reg_function('^std::__1::vector<.*>$', CxxVectorPrinter)
+        reg_function('^std::__1::list<.*>$', CxxListPrinter)
 
     gdb.pretty_printers.append(lookup_type)
 
