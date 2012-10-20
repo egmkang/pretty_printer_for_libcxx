@@ -15,7 +15,7 @@ class CxxStringPrinter:
         else:
             self.ptr = self.val['__r_']['__first_']['__l']['__data_']
             self.length = self.val['__r_']['__first_']['__l']['__size_'] + 1
-        return self.ptr.string (length = self.length)
+        return ('"%s"' % (self.ptr.string (length = self.length)))
 
     def display_hint (self):
         return "std::string"
@@ -94,6 +94,50 @@ class CxxListPrinter:
     def display_hint(self):
         return 'std::list'
 
+class CxxDequePrinter:
+    "std::__1::deque"
+
+    class _iterator:
+        def __init__(self, begin, offset, block, size):
+            self.begin = begin
+            self.count = 0
+            self.size = size
+            self.offset = offset
+            self.block = block
+
+        def __iter__(self):
+            return self
+        
+        def next(self):
+            count = self.count
+            self.count = self.count + 1
+            if count == self.size:
+                raise StopIteration
+            index = count + self.offset
+            i,j = index / self.block, index % self.block
+            value = ((self.begin + i).dereference() + j).dereference()
+            return ('[%d]' % count, value)
+
+    def __init__(self, typename, val):
+        self.val = val
+        self.typename = typename
+
+    def children(self):
+        begin = self.val['__map_']['__first_']
+        block = self.val['__block_size']
+        offset = self.val['__start_']
+        size  = self.val['__size_']['__first_']
+
+        return self._iterator(begin, offset, block, size)
+                              
+
+    def to_string(self):
+        size = self.val['__size_']['__first_']
+        return ('%s of length %d' % (self.typename, size))
+
+    def display_hint(self):
+        return 'std::deque'
+
 _type_parse_map = []
 
 def reg_function(regex, parse):
@@ -110,15 +154,17 @@ def lookup_type (val):
         m = regex.match(typename)
         if m is not None:
             return Printer(typename, val)
+    #print("Not Fount Type %s" % (typename))
     return None
 
 def register_libcxx_printers(obj):
     global _type_parse_map
     if len(_type_parse_map) < 1:
-        reg_function('^std::__1::basic_string<char,.*>$', CxxStringPrinter)
+        reg_function('^std::__1::basic_string<char.*>$', CxxStringPrinter)
         reg_function('^std::__1::string.*$', CxxStringPrinter)
         reg_function('^std::__1::vector<.*>$', CxxVectorPrinter)
         reg_function('^std::__1::list<.*>$', CxxListPrinter)
+        reg_function('^std::__1::deque<.*>$', CxxDequePrinter)
 
     gdb.pretty_printers.append(lookup_type)
 
