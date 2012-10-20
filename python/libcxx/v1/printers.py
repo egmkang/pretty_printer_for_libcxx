@@ -138,6 +138,25 @@ class CxxDequePrinter:
     def display_hint(self):
         return 'std::deque'
 
+class CxxStackPrinter:
+    "std::__1::stack or std::__1::queue"
+
+    def __init__ (self, typename, val):
+        self.typename = typename
+        self.visualizer = gdb.default_visualizer(val['c'])
+
+    def children (self):
+        return self.visualizer.children()
+
+    def to_string (self):
+        return '%s wrapping: %s' % (self.typename,
+                self.visualizer.to_string())
+
+    def display_hint (self):
+        if hasattr (self.visualizer, 'display_hint'):
+            return self.visualizer.display_hint ()
+        return None
+
 _type_parse_map = []
 
 def reg_function(regex, parse):
@@ -161,10 +180,13 @@ def register_libcxx_printers(obj):
     global _type_parse_map
     if len(_type_parse_map) < 1:
         reg_function('^std::__1::basic_string<char.*>$', CxxStringPrinter)
-        reg_function('^std::__1::string.*$', CxxStringPrinter)
+        reg_function('^std::__1::string$', CxxStringPrinter)
         reg_function('^std::__1::vector<.*>$', CxxVectorPrinter)
         reg_function('^std::__1::list<.*>$', CxxListPrinter)
         reg_function('^std::__1::deque<.*>$', CxxDequePrinter)
-
-    gdb.pretty_printers.append(lookup_type)
+        reg_function('^std::__1::stack<.*>$', CxxStackPrinter)
+    
+    if obj is None:
+        obj = gdb
+    obj.pretty_printers.append(lookup_type)
 
