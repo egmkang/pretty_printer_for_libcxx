@@ -193,7 +193,7 @@ class CxxRbTreeIterator:
         return ("[%d]" % count , value)
 
 class CxxMapPrinter:
-    "std::__1::map"
+    "std::__1::map and std::multiset"
 
     def __init__(self, typename, val):
         self.typename = typename
@@ -216,7 +216,7 @@ class CxxMapPrinter:
         return 'std::map'
 
 class CxxSetPrinter:
-    "std::__1::sap"
+    "std::__1::set and std::__1::multiset"
 
     def __init__(self, typename, val):
         self.typename = typename
@@ -286,6 +286,8 @@ def register_libcxx_printers(obj):
         reg_function('^std::__1::list<.*>$', CxxListPrinter)
         reg_function('^std::__1::deque<.*>$', CxxDequePrinter)
         reg_function('^std::__1::stack<.*>$', CxxStackPrinter)
+        reg_function('^std::__1::priority_queue<.*>$', CxxStackPrinter)
+        reg_function('^std::__1::queue<.*>$', CxxStackPrinter)
         reg_function('^std::__1::map<.*>$', CxxMapPrinter)
         reg_function('^std::__1::multimap<.*>$', CxxMapPrinter)
         reg_function('^std::__1::set<.*>$', CxxSetPrinter)
