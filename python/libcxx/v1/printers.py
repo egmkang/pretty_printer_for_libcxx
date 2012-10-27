@@ -141,11 +141,12 @@ class CxxDequePrinter:
 
 class CxxRbTreeIterator:
     "RbTreeIterator"
-    def __init__(self, nodetype, begin, size):
+    def __init__(self, nodetype, begin, size, fmt):
         self.begin = begin
         self.count = 0
         self.size = size
         self.nodetype = nodetype
+        self.fmt = fmt
 
     def __iter__(self):
         return self
@@ -190,7 +191,7 @@ class CxxRbTreeIterator:
         value_ptr = self.begin.cast(self.nodetype)
         value = value_ptr.dereference()['__value_']
         self.begin = self.get_next_node(self.begin)
-        return ("[%d]" % count , value)
+        return self.fmt(count, value)
 
 class CxxMapPrinter:
     "std::__1::map and std::multiset"
@@ -203,7 +204,8 @@ class CxxMapPrinter:
         begin = self.val['__tree_']['__begin_node_']
         nodetype = begin.type
         size = self.val['__tree_']['__pair3_']['__first_']
-        return CxxRbTreeIterator(nodetype, begin, size)
+        fmt = lambda count,value : ('[%s]' % value['first'], value['second'])
+        return CxxRbTreeIterator(nodetype, begin, size, fmt)
 
     def to_string(self):
         begin = self.val['__tree_']['__begin_node_']
@@ -226,7 +228,8 @@ class CxxSetPrinter:
         begin = self.val['__tree_']['__begin_node_']
         nodetype = begin.type
         size = self.val['__tree_']['__pair3_']['__first_']
-        return CxxRbTreeIterator(nodetype, begin, size)
+        fmt = lambda count,value : ('[%d]' % count, value)
+        return CxxRbTreeIterator(nodetype, begin, size, fmt)
 
     def to_string(self):
         begin = self.val['__tree_']['__begin_node_']
