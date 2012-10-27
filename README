@@ -1,4 +1,35 @@
 Plugin for llvm libcxx pretty printer.
 
+
+Edit ~/.gdbinit, and append:
+
+python
+import sys
+import gdb
+#change '/home/egmkang/python' to yours
+sys.path.insert(0, '/home/egmkang/python')   
+from libcxx.v1.printers import register_libcxx_printers
+register_libcxx_printers(gdb.current_objfile())
+end
+
+Supported STL Container:
+    basic_string
+    vector
+    list
+    deque
+    stack
+    priority_queue
+    queue
+    map
+    multimap
+    set
+    multiset
+
 TODO:
-All C++ STL Conainter Parser;
+    unoredered_map
+    unoredered_set
+    unoredered_multimap
+    unoredered_multiset
+    forward_list
+    array
+    smart pointers
