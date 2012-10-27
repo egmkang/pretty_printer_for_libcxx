@@ -139,60 +139,61 @@ class CxxDequePrinter:
     def display_hint(self):
         return 'std::deque'
 
+class CxxRbTreeIterator:
+    "RbTreeIterator"
+    def __init__(self, nodetype, begin, size):
+        self.begin = begin
+        self.count = 0
+        self.size = size
+        self.nodetype = nodetype
+
+    def __iter__(self):
+        return self
+    def get_min_node(self, node):
+        """
+        _NodePtr                           
+        __tree_min(_NodePtr __x) _NOEXCEPT 
+        {                                  
+           while (__x->__left_ != nullptr) 
+                __x = __x->__left_;        
+           return __x;                     
+        }                                  
+        """
+        while node['__left_'] != 0:
+            node = node['__left_']
+        return node
+
+    def get_next_node(self, node):
+        """
+        _NodePtr
+        __tree_next(_NodePtr __x) _NOEXCEPT
+        {
+            if (__x->__right_ != nullptr)
+                return __tree_min(__x->__right_);
+            while (!__tree_is_left_child(__x))
+                __x = __x->__parent_;
+            return __x->__parent_;
+        }
+        """
+        begin = node
+        if begin['__right_'] != 0:
+            return self.get_min_node(begin['__right_'])
+        while begin != begin['__parent_']['__left_']:
+            begin = begin['__parent_']
+        return begin['__parent_']
+
+    def next(self):
+        count = self.count
+        self.count = self.count + 1
+        if count == self.size:
+            raise StopIteration
+        value_ptr = self.begin.cast(self.nodetype)
+        value = value_ptr.dereference()['__value_']
+        self.begin = self.get_next_node(self.begin)
+        return ("[%d]" % count , value)
+
 class CxxMapPrinter:
     "std::__1::map"
-
-    class _iterator:
-        def __init__(self, nodetype, begin, size):
-            self.begin = begin
-            self.count = 0
-            self.size = size
-            self.nodetype = nodetype
-
-        def __iter__(self):
-            return self
-        def get_min_node(self, node):
-            """
-            _NodePtr                           
-            __tree_min(_NodePtr __x) _NOEXCEPT 
-            {                                  
-               while (__x->__left_ != nullptr) 
-                    __x = __x->__left_;        
-               return __x;                     
-            }                                  
-            """
-            while node['__left_'] != 0:
-                node = node['__left_']
-            return node
-
-        def get_next_node(self, node):
-            """
-            _NodePtr
-            __tree_next(_NodePtr __x) _NOEXCEPT
-            {
-                if (__x->__right_ != nullptr)
-                    return __tree_min(__x->__right_);
-                while (!__tree_is_left_child(__x))
-                    __x = __x->__parent_;
-                return __x->__parent_;
-            }
-            """
-            begin = node
-            if begin['__right_'] != 0:
-                return self.get_min_node(begin['__right_'])
-            while begin != begin['__parent_']['__left_']:
-                begin = begin['__parent_']
-            return begin['__parent_']
-        
-        def next(self):
-            count = self.count
-            self.count = self.count + 1
-            if count == self.size:
-                raise StopIteration
-            value_ptr = self.begin.cast(self.nodetype)
-            value = value_ptr.dereference()['__value_']
-            self.begin = self.get_next_node(self.begin)
-            return ("[%d] " % count , value)
 
     def __init__(self, typename, val):
         self.typename = typename
@@ -202,7 +203,7 @@ class CxxMapPrinter:
         begin = self.val['__tree_']['__begin_node_']
         nodetype = begin.type
         size = self.val['__tree_']['__pair3_']['__first_']
-        return self._iterator(nodetype, begin, size)
+        return CxxRbTreeIterator(nodetype, begin, size)
 
     def to_string(self):
         begin = self.val['__tree_']['__begin_node_']
@@ -213,6 +214,29 @@ class CxxMapPrinter:
 
     def display_hint(self):
         return 'std::map'
+
+class CxxSetPrinter:
+    "std::__1::sap"
+
+    def __init__(self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def children(self):
+        begin = self.val['__tree_']['__begin_node_']
+        nodetype = begin.type
+        size = self.val['__tree_']['__pair3_']['__first_']
+        return CxxRbTreeIterator(nodetype, begin, size)
+
+    def to_string(self):
+        begin = self.val['__tree_']['__begin_node_']
+        keytype = self.val.type.template_argument(0)
+        valuetype = self.val.type.template_argument(1)
+        size = self.val['__tree_']['__pair3_']['__first_']
+        return ('%s of length %d' % (self.typename, size))
+
+    def display_hint(self):
+        return 'std::set'
 
 class CxxStackPrinter:
     "std::__1::stack or std::__1::queue"
@@ -263,6 +287,7 @@ def register_libcxx_printers(obj):
         reg_function('^std::__1::deque<.*>$', CxxDequePrinter)
         reg_function('^std::__1::stack<.*>$', CxxStackPrinter)
         reg_function('^std::__1::map<.*>$', CxxMapPrinter)
+        reg_function('^std::__1::set<.*>$', CxxSetPrinter)
     
     if obj is None:
         obj = gdb
