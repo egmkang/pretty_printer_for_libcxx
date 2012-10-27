@@ -287,7 +287,9 @@ def register_libcxx_printers(obj):
         reg_function('^std::__1::deque<.*>$', CxxDequePrinter)
         reg_function('^std::__1::stack<.*>$', CxxStackPrinter)
         reg_function('^std::__1::map<.*>$', CxxMapPrinter)
+        reg_function('^std::__1::multimap<.*>$', CxxMapPrinter)
         reg_function('^std::__1::set<.*>$', CxxSetPrinter)
+        reg_function('^std::__1::multiset<.*>$', CxxSetPrinter)
     
     if obj is None:
         obj = gdb
