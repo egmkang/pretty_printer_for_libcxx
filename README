@@ -1,4 +1,4 @@
-Plugin for llvm libcxx pretty printer.
+A gdb pretty printer for llvm libcxx.
 
 
 Edit ~/.gdbinit, and append:
@@ -29,8 +29,8 @@ Supported STL Container:
     unoredered_set
     unoredered_multimap
     unoredered_multiset
+    forward_list
+    smart pointers
 
 TODO:
     iterator
-    forward_list
-    smart pointers

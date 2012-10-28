@@ -3,6 +3,34 @@ import itertools
 import re
 import io
 
+class CxxSharedPointerPrinter:
+    "Print a std::__1::shared_ptr or std::__1::weak_ptr"
+    def __init__(self, typename, val):
+        self.val = val
+        self.typename = typename
+
+    def to_string(self):
+        ptr = self.val['__ptr_']
+        ref_count = self.val['__cntrl_'].dereference()['__shared_owners_']
+        weak_count = self.val['__cntrl_'].dereference()['__shared_weak_owners_']
+        return ('%s (count %d, weak %d) %s' % (self.typename, ref_count, weak_count, ptr))
+
+    def display_hint (self):
+        return "std::shared_ptr"
+
+class CxxUniquePtrPrinter:
+    "Print a std::__1::unique_ptr"
+    def __init__(self, typename, val):
+        self.val = val
+        self.typename = typename
+
+    def to_string(self):
+        ptr = self.val['__ptr_']['__first_']
+        return ('%s  %s' % (self.typename, ptr))
+
+    def display_hint (self):
+        return "std::unique_ptr"
+
 class CxxStringPrinter:
     "Print a std::__1::basic_string"
     def __init__(self, typename, val):
@@ -418,6 +446,9 @@ def lookup_type (val):
 def register_libcxx_printers(obj):
     global _type_parse_map
     if len(_type_parse_map) < 1:
+        reg_function('^std::__1::shared_ptr<.*>$', CxxSharedPointerPrinter)
+        reg_function('^std::__1::weak_ptr<.*>$', CxxSharedPointerPrinter)
+        reg_function('^std::__1::unique_ptr<.*>$', CxxUniquePtrPrinter)
         reg_function('^std::__1::basic_string<char.*>$', CxxStringPrinter)
         reg_function('^std::__1::string$', CxxStringPrinter)
         reg_function('^std::__1::array<.*>$', CxxArrayPrinter)
