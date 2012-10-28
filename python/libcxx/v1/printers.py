@@ -21,6 +21,45 @@ class CxxStringPrinter:
     def display_hint (self):
         return "std::string"
 
+class CxxArrayPrinter:
+    "std::__1::array"
+
+    class _iterator:
+        def __init__(self, begin, end):
+            self.begin = begin
+            self.end = end
+            self.count = 0
+
+        def __iter__(self):
+            return self
+        
+        def next(self):
+            count = self.count
+            self.count = self.count + 1
+            if count == self.end:
+                raise StopIteration
+            value = self.begin[count]
+            return ('[%d]' % count, value)
+
+    def __init__(self, typename, val):
+        self.val = val
+        self.typename = typename
+
+    def children(self):
+        array_type = self.val['__elems_'].type
+        size = array_type.sizeof / array_type.target().sizeof
+        return self._iterator(self.val['__elems_'],
+                              size)
+
+    def to_string(self):
+        array_type = self.val['__elems_'].type
+        target = array_type.target()
+        size = array_type.sizeof / array_type.target().sizeof
+        return ('%s of length %d' % (self.typename, size))
+
+    def display_hint(self):
+        return 'std::array'
+
 class CxxVectorPrinter:
     "std::__1::vector"
 
@@ -209,8 +248,6 @@ class CxxMapPrinter:
 
     def to_string(self):
         begin = self.val['__tree_']['__begin_node_']
-        keytype = self.val.type.template_argument(0)
-        valuetype = self.val.type.template_argument(1)
         size = self.val['__tree_']['__pair3_']['__first_']
         return ('%s of length %d' % (self.typename, size))
 
@@ -233,13 +270,77 @@ class CxxSetPrinter:
 
     def to_string(self):
         begin = self.val['__tree_']['__begin_node_']
-        keytype = self.val.type.template_argument(0)
-        valuetype = self.val.type.template_argument(1)
         size = self.val['__tree_']['__pair3_']['__first_']
         return ('%s of length %d' % (self.typename, size))
 
     def display_hint(self):
         return 'std::set'
+
+class CxxUnorderedIterator:
+    def __init__(self, nodetype, begin, size, fmt):
+        self.begin = begin
+        self.count = 0
+        self.size = size
+        self.nodetype = nodetype
+        self.fmt = fmt
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        "__node_ = __node_->__next_"
+        count = self.count
+        self.count = self.count + 1
+        if count == self.size:
+            raise StopIteration
+        value_ptr = self.begin.cast(self.nodetype)
+        value = value_ptr.dereference()['__value_']
+        self.begin = self.begin['__next_']
+        return self.fmt(count, value)
+
+class CxxUnorderedMapPrinter:
+    "std::__1::unordered_map and std::__1::unordered_multimap"
+
+    def __init__(self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def children(self):
+        begin = self.val['__table_']['__p1_']['__first_']['__next_']
+        nodetype = begin.type
+        size = self.val['__table_']['__p2_']['__first_']
+        fmt = lambda count,value : ('[%s]' % value['first'], value['second'])
+        return CxxUnorderedIterator(nodetype, begin, size, fmt)
+
+    def to_string(self):
+        begin = self.val['__table_']['__p1_']['__first_']['__next_']
+        size = self.val['__table_']['__p2_']['__first_']
+        return ('%s of length %d' % (self.typename, size))
+
+    def display_hint(self):
+        return 'std::unordered_map'
+
+class CxxUnorderedSetPrinter:
+    "std::__1::unordered_set and std::__1::unordered_multiset"
+
+    def __init__(self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def children(self):
+        begin = self.val['__table_']['__p1_']['__first_']['__next_']
+        nodetype = begin.type
+        size = self.val['__table_']['__p2_']['__first_']
+        fmt = lambda count,value : ('[%d]' % count, value)
+        return CxxUnorderedIterator(nodetype, begin, size, fmt)
+
+    def to_string(self):
+        begin = self.val['__table_']['__p1_']['__first_']['__next_']
+        size = self.val['__table_']['__p2_']['__first_']
+        return ('%s of length %d' % (self.typename, size))
+
+    def display_hint(self):
+        return 'std::unordered_set'
 
 class CxxStackPrinter:
     "std::__1::stack or std::__1::queue"
@@ -285,6 +386,7 @@ def register_libcxx_printers(obj):
     if len(_type_parse_map) < 1:
         reg_function('^std::__1::basic_string<char.*>$', CxxStringPrinter)
         reg_function('^std::__1::string$', CxxStringPrinter)
+        reg_function('^std::__1::array<.*>$', CxxArrayPrinter)
         reg_function('^std::__1::vector<.*>$', CxxVectorPrinter)
         reg_function('^std::__1::list<.*>$', CxxListPrinter)
         reg_function('^std::__1::deque<.*>$', CxxDequePrinter)
@@ -295,6 +397,10 @@ def register_libcxx_printers(obj):
         reg_function('^std::__1::multimap<.*>$', CxxMapPrinter)
         reg_function('^std::__1::set<.*>$', CxxSetPrinter)
         reg_function('^std::__1::multiset<.*>$', CxxSetPrinter)
+        reg_function('^std::__1::unordered_map<.*>$', CxxUnorderedMapPrinter)
+        reg_function('^std::__1::unordered_multimap<.*>$', CxxUnorderedMapPrinter)
+        reg_function('^std::__1::unordered_set<.*>$', CxxUnorderedSetPrinter)
+        reg_function('^std::__1::unordered_multiset<.*>$', CxxUnorderedSetPrinter)
     
     if obj is None:
         obj = gdb
