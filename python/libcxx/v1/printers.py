@@ -134,6 +134,40 @@ class CxxListPrinter:
     def display_hint(self):
         return 'std::list'
 
+class CxxForwardListPrinter:
+    "std::__1::forward_list"
+
+    class _iterator:
+        def __init__(self, begin):
+            self.begin = begin
+            self.count = 0
+
+        def __iter__(self):
+            return self
+        
+        def next(self):
+            count = self.count
+            self.count = self.count + 1
+            if self.begin == 0:
+                raise StopIteration
+            value = self.begin.dereference()['__value_']
+            self.begin = self.begin['__next_']
+            return ('[%d]' % count, value)
+
+    def __init__(self, typename, val):
+        self.val = val
+        self.typename = typename
+
+    def children(self):
+        begin = self.val['__before_begin_']['__first_']['__next_']
+        return self._iterator(begin)
+
+    def to_string(self):
+        return ('%s' % self.typename)
+
+    def display_hint(self):
+        return 'std::forward_list'
+
 class CxxDequePrinter:
     "std::__1::deque"
 
@@ -389,6 +423,7 @@ def register_libcxx_printers(obj):
         reg_function('^std::__1::array<.*>$', CxxArrayPrinter)
         reg_function('^std::__1::vector<.*>$', CxxVectorPrinter)
         reg_function('^std::__1::list<.*>$', CxxListPrinter)
+        reg_function('^std::__1::forward_list<.*>$', CxxForwardListPrinter)
         reg_function('^std::__1::deque<.*>$', CxxDequePrinter)
         reg_function('^std::__1::stack<.*>$', CxxStackPrinter)
         reg_function('^std::__1::priority_queue<.*>$', CxxStackPrinter)
