@@ -1,36 +1,14 @@
-A gdb pretty printer for llvm libcxx.
-
+A gdb pretty printers for llvm libcxx.
 
 Edit ~/.gdbinit, and append:
 
 python
 import sys
 import gdb
-#change '/home/egmkang/python' to yours
+#replace path
 sys.path.insert(0, '/home/egmkang/python')   
+sys.path.insert(0, '/usr/local/share/gcc-4.6.2/python')
 from libcxx.v1.printers import register_libcxx_printers
-register_libcxx_printers(gdb.current_objfile())
-end
-
-Supported STL Container:
-    basic_string
-    vector
-    list
-    deque
-    stack
-    priority_queue
-    queue
-    map
-    multimap
-    set
-    multiset
-    array
-    unoredered_map
-    unoredered_set
-    unoredered_multimap
-    unoredered_multiset
-    forward_list
-    smart pointers
-
-TODO:
-    iterator
+from libstdcxx.v6.printers import register_libstdcxx_printers
+register_libcxx_printers(None)
+register_libstdcxx_printers(None)
