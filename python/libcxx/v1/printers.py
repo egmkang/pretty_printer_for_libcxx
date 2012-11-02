@@ -423,6 +423,103 @@ class CxxStackPrinter:
             return self.visualizer.display_hint ()
         return None
 
+class CxxVectorIterPrinter:
+    "std::__1::__wrap_iter"
+
+    def __init__ (self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        value = self.val['__i'].dereference()
+        return '%s' % value
+
+    def display_hint (self):
+        return 'std::__1::__wrap_iter'
+
+class CxxListIterPrinter:
+    "std::__1::__list_iterator"
+
+    def __init__ (self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        value = self.val['__ptr_'].dereference()['__value_']
+        return '%s' % value
+
+    def display_hint (self):
+        return 'std::__1::__list_iterator'
+
+class CxxDequeIterPrinter:
+    "std::__1::__deque_iterator"
+
+    def __init__ (self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        value = self.val['__ptr_'].dereference()
+        return '%s' % value
+
+    def display_hint (self):
+        return 'std::__1::__deque_iterator'
+
+class CxxMapIterPrinter:
+    "std::__1::__map_iterator"
+
+    def __init__ (self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        value = self.val['__i_']['__ptr_'].dereference()['__value_']
+        return '%s' % value
+
+    def display_hint (self):
+        return 'std::__1::__map_iterator'
+
+class CxxSetIterPrinter:
+    "std::__1::__tree_const_iterator"
+
+    def __init__ (self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        value = self.val['__ptr_'].dereference()['__value_']
+        return '%s' % value
+
+    def display_hint (self):
+        return "std::__1::__tree_const_iterator"
+
+class CxxUnorederedMapIterPrinter:
+    "std::__1::__hash_map_iterator"
+
+    def __init__ (self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        value = self.val['__i_']['__node_'].dereference()['__value_']
+        return '%s' % value
+
+    def display_hint (self):
+        return "std::__1::__hash_map_iterator"
+
+class CxxUnorederedSetIterPrinter:
+    "std::__1::__hash_set_iterator"
+
+    def __init__ (self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        value = self.val['__node_'].dereference()['__value_']
+        return '%s' % value
+
+    def display_hint (self):
+        return "std::__1::__hash_set_iterator"
 
 _type_parse_map = []
 
@@ -440,7 +537,6 @@ def lookup_type (val):
         m = regex.match(typename)
         if m is not None:
             return Printer(typename, val)
-    #print("Not Fount Type %s" % (typename))
     return None
 
 def register_libcxx_printers(obj):
@@ -467,6 +563,18 @@ def register_libcxx_printers(obj):
         reg_function('^std::__1::unordered_multimap<.*>$', CxxUnorderedMapPrinter)
         reg_function('^std::__1::unordered_set<.*>$', CxxUnorderedSetPrinter)
         reg_function('^std::__1::unordered_multiset<.*>$', CxxUnorderedSetPrinter)
+        reg_function('^std::__1::__wrap_iter<.*>$', CxxVectorIterPrinter)
+        reg_function('^std::__1::__list_iterator<.*>$', CxxListIterPrinter)
+        reg_function('^std::__1::__list_const_iterator<.*>$', CxxListIterPrinter)
+        reg_function('^std::__1::__forward_list_iterator<.*>$', CxxListIterPrinter)
+        reg_function('^std::__1::__forward_list_const_iterator<.*>$', CxxListIterPrinter)
+        reg_function('^std::__1::__deque_iterator<.*>$', CxxDequeIterPrinter)
+        reg_function('^std::__1::__map_iterator<.*>$', CxxMapIterPrinter)
+        reg_function('^std::__1::__map_const_iterator<.*>$', CxxMapIterPrinter)
+        reg_function('^std::__1::__tree_const_iterator<.*>$', CxxSetIterPrinter)
+        reg_function('^std::__1::__hash_map_iterator<.*>$', CxxUnorederedMapIterPrinter)
+        reg_function('^std::__1::__hash_map_const_iterator<.*>$', CxxUnorederedMapIterPrinter)
+        reg_function('^std::__1::__hash_const_iterator<.*>$', CxxUnorederedSetIterPrinter)
     
     if obj is None:
         obj = gdb
