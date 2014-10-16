@@ -562,7 +562,7 @@ def reg_function(regex, parse):
 
 def lookup_type (val):
     global _type_parse_map
-    typename = str(val.type)
+    typename = str(val.type.strip_typedefs())
     for (regex, Printer) in _type_parse_map:
         m = regex.match(typename)
         if m is not None:
@@ -605,7 +605,7 @@ def register_libcxx_printers(obj):
         reg_function('^std::__1::__hash_map_iterator<.*>$', CxxUnorederedMapIterPrinter)
         reg_function('^std::__1::__hash_map_const_iterator<.*>$', CxxUnorederedMapIterPrinter)
         reg_function('^std::__1::__hash_const_iterator<.*>$', CxxUnorederedSetIterPrinter)
-    
+
     if obj is None:
         obj = gdb
     obj.pretty_printers.append(lookup_type)
