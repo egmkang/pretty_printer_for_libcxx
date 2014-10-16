@@ -91,7 +91,7 @@ class CxxArrayPrinter:
         def __iter__(self):
             return self
         
-        def next(self):
+        def __next__(self):
             count = self.count
             self.count = self.count + 1
             if count == self.end:
@@ -130,7 +130,7 @@ class CxxVectorPrinter:
         def __iter__(self):
             return self
         
-        def next(self):
+        def __next__(self):
             count = self.count
             self.count = self.count + 1
             if self.begin == self.end:
@@ -168,7 +168,7 @@ class CxxListPrinter:
         def __iter__(self):
             return self
         
-        def next(self):
+        def __next__(self):
             count = self.count
             self.count = self.count + 1
             if count == self.size:
@@ -203,7 +203,7 @@ class CxxForwardListPrinter:
         def __iter__(self):
             return self
         
-        def next(self):
+        def __next__(self):
             count = self.count
             self.count = self.count + 1
             if self.begin == 0:
@@ -240,7 +240,7 @@ class CxxDequePrinter:
         def __iter__(self):
             return self
         
-        def next(self):
+        def __next__(self):
             count = self.count
             self.count = self.count + 1
             if count == self.size:
@@ -314,7 +314,7 @@ class CxxRbTreeIterator:
             begin = begin['__parent_']
         return begin['__parent_']
 
-    def next(self):
+    def __next__(self):
         count = self.count
         self.count = self.count + 1
         if count == self.size:
@@ -379,7 +379,7 @@ class CxxUnorderedIterator:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         "__node_ = __node_->__next_"
         count = self.count
         self.count = self.count + 1
