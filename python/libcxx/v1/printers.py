@@ -40,10 +40,11 @@ class CxxSharedPointerPrinter:
         self.typename = typename
 
     def to_string(self):
-        ptr = self.val['__ptr_']
-        ref_count = self.val['__cntrl_'].dereference()['__shared_owners_']
-        weak_count = self.val['__cntrl_'].dereference()['__shared_weak_owners_']
-        return ('%s (count %d, weak %d) %s' % (self.typename, ref_count, weak_count, ptr))
+        ptr = self.val['__ptr_'].dereference()
+        #ref_count = self.val['__cntrl_'].dereference()['__shared_owners_']
+        #weak_count = self.val['__cntrl_'].dereference()['__shared_weak_owners_']
+        #return ('%s (count %d, weak %d) %s' % (self.typename, ref_count, weak_count, ptr))
+        return ('%s %s' % (self.typename, ptr))
 
     def display_hint (self):
         return "std::shared_ptr"
