@@ -271,8 +271,8 @@ class CxxDequePrinter:
     def display_hint(self):
         return 'std::deque'
 
-class CxxRbTreeIterator:
-    "RbTreeIterator"
+class CxxRbTreeSetIterator:
+    "RbTreeSetIterator"
     def __init__(self, nodetype, begin, size, fmt):
         self.begin = begin
         self.count = 0
@@ -325,6 +325,60 @@ class CxxRbTreeIterator:
         self.begin = self.get_next_node(self.begin)
         return self.fmt(count, value)
 
+class CxxRbTreeIterator:
+    "RbTreeIterator"
+    def __init__(self, nodetype, begin, size, fmt):
+        self.begin = begin
+        self.count = 0
+        self.size = size
+        self.nodetype = nodetype
+        self.fmt = fmt
+
+    def __iter__(self):
+        return self
+    def get_min_node(self, node):
+        """
+        _NodePtr                           
+        __tree_min(_NodePtr __x) _NOEXCEPT 
+        {                                  
+           while (__x->__left_ != nullptr) 
+                __x = __x->__left_;        
+           return __x;                     
+        }                                  
+        """
+        while node['__left_'] != 0:
+            node = node['__left_']
+        return node
+
+    def get_next_node(self, node):
+        """
+        _NodePtr
+        __tree_next(_NodePtr __x) _NOEXCEPT
+        {
+            if (__x->__right_ != nullptr)
+                return __tree_min(__x->__right_);
+            while (!__tree_is_left_child(__x))
+                __x = __x->__parent_;
+            return __x->__parent_;
+        }
+        """
+        begin = node
+        if begin['__right_'] != 0:
+            return self.get_min_node(begin['__right_'])
+        while begin != begin['__parent_']['__left_']:
+            begin = begin['__parent_']
+        return begin['__parent_']
+
+    def __next__(self):
+        count = self.count
+        self.count = self.count + 1
+        if count == self.size:
+            raise StopIteration
+        value_ptr = self.begin.cast(self.nodetype)
+        value = value_ptr.dereference()['__value_']['__cc']
+        self.begin = self.get_next_node(self.begin)
+        return self.fmt(count, value)
+
 class CxxMapPrinter:
     "std::__1::map and std::multiset"
 
@@ -359,7 +413,7 @@ class CxxSetPrinter:
         nodetype = begin.type
         size = self.val['__tree_']['__pair3_']['__first_']
         fmt = lambda count,value : ('[%d]' % count, value)
-        return CxxRbTreeIterator(nodetype, begin, size, fmt)
+        return CxxRbTreeSetIterator(nodetype, begin, size, fmt)
 
     def to_string(self):
         begin = self.val['__tree_']['__begin_node_']
@@ -370,6 +424,28 @@ class CxxSetPrinter:
         return 'std::set'
 
 class CxxUnorderedIterator:
+    def __init__(self, nodetype, begin, size, fmt):
+        self.begin = begin
+        self.count = 0
+        self.size = size
+        self.nodetype = nodetype
+        self.fmt = fmt
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        "__node_ = __node_->__next_"
+        count = self.count
+        self.count = self.count + 1
+        if count == self.size:
+            raise StopIteration
+        value_ptr = self.begin.cast(self.nodetype)
+        value = value_ptr.dereference()['__value_']['__cc']
+        self.begin = self.begin['__next_']
+        return self.fmt(count, value)
+
+class CxxUnorderedSetIterator:
     def __init__(self, nodetype, begin, size, fmt):
         self.begin = begin
         self.count = 0
@@ -425,7 +501,7 @@ class CxxUnorderedSetPrinter:
         nodetype = begin.type
         size = self.val['__table_']['__p2_']['__first_']
         fmt = lambda count,value : ('[%d]' % count, value)
-        return CxxUnorderedIterator(nodetype, begin, size, fmt)
+        return CxxUnorderedSetIterator(nodetype, begin, size, fmt)
 
     def to_string(self):
         begin = self.val['__table_']['__p1_']['__first_']['__next_']
@@ -504,7 +580,7 @@ class CxxMapIterPrinter:
         self.val = val
 
     def to_string(self):
-        value = self.val['__i_']['__ptr_'].dereference()['__value_']
+        value = self.val['__i_']['__ptr_'].dereference()['__value_']['__cc']
         return '%s' % value
 
     def display_hint (self):
@@ -518,7 +594,7 @@ class CxxSetIterPrinter:
         self.val = val
 
     def to_string(self):
-        value = self.val['__ptr_'].dereference()['__value_']
+        value = self.val['__ptr_'].dereference()['__value_']['__cc']
         return '%s' % value
 
     def display_hint (self):
@@ -532,7 +608,7 @@ class CxxUnorederedMapIterPrinter:
         self.val = val
 
     def to_string(self):
-        value = self.val['__i_']['__node_'].dereference()['__value_']
+        value = self.val['__i_']['__node_'].dereference()['__value_']['__cc']
         return '%s' % value
 
     def display_hint (self):
